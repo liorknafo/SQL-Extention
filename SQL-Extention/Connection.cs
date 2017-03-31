@@ -77,7 +77,10 @@ namespace SQL_Extention
                 (Command.Parameters[$"@{column.Name}"] as IDbDataParameter).Value = pks[i];
                 i++;
             }
-            return GetObject<T>(Command.ExecuteReader());
+            using (IDataReader dataReader = Command.ExecuteReader())
+            {
+                return GetObject<T>(dataReader);
+            }
         }
 
         private T GetObject<T>(IDataReader dataReader) where T : class
@@ -89,9 +92,12 @@ namespace SQL_Extention
                 return null;
             foreach(PropertyInfo property in type.GetProperties())
             {
-
+                if(!CheckValidProperty(property))
+                {
+                    property.SetValue(obj, dataReader[property.Name]);
+                }
             }
-            throw new NotImplementedException();
+            return (T)obj;
         }
 
         public void Insert<T>(T obj)
