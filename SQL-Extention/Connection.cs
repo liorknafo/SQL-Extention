@@ -5,6 +5,7 @@ using System.Data;
 using System.Reflection;
 using RefPropertyAttributes = System.Reflection.PropertyAttributes;
 using Table = SQL_Extention.TableInfo.TableInfo;
+using SQL_Extention.TableInfo;
 
 namespace SQL_Extention
 {
@@ -14,11 +15,11 @@ namespace SQL_Extention
         private Dictionary<Type, IDbCommand> DeleteCommands = new Dictionary<Type, IDbCommand>();
         private Dictionary<Type, IDbCommand> UpdateCommands = new Dictionary<Type, IDbCommand>();
         private Dictionary<Type, Table> Tables = new Dictionary<Type, Table>();
-        private Dictionary<Tuble<Type, int>, IDbCommand> GetByPk = new Dictionary<Tuple Tuble<Type, int>, IDbCommand>();
+        private Dictionary<Tuple<Type, int>, IDbCommand> GetByPk = new Dictionary<Tuple<Type, int>, IDbCommand>();
 
         private IDbConnection Connectoin;
         private SQLCommandAdapter SQLCommandAdapter;
-        public Connection(IDbConnection connction,SQLCommandAdapter adapter = null)
+        public Connection(IDbConnection connction, SQLCommandAdapter adapter = null)
         {
             Connectoin = connction;
             if (adapter != null)
@@ -52,9 +53,45 @@ namespace SQL_Extention
             createCommand.ExecuteNonQuery();
         }
 
-        public T Get<T>(params object[] pks)
+        public T Get<T>(params object[] pks) where T : class
         {
+            int pkNum = pks.Length;
+            Type type = typeof(T);
+            Table table = Tables[type];
+            if (table.PrimaryKeys.Count <= pkNum)
+                throw new IndexOutOfRangeException($"PK NUM CAN'T BE OVER {table.PrimaryKeys.Count}");
+            Tuple<Type, int> tuple = new Tuple<Type, int>(type, pkNum);
+            IDbCommand Command;
+            if (GetByPk.ContainsKey(tuple))
+            {
+                Command = GetByPk[tuple];
+            }
+            else
+            {
+                Command = SQLCommandAdapter.Get<T>();
+                GetByPk.Add(tuple, Command);
+            }
+            int i = 0;
+            foreach (ColumnInfo column in table.PrimaryKeys)
+            {
+                (Command.Parameters[$"@{column.Name}"] as IDbDataParameter).Value = pks[i];
+                i++;
+            }
+            return GetObject<T>(Command.ExecuteReader());
+        }
 
+        private T GetObject<T>(IDataReader dataReader) where T : class
+        {
+            Type type = typeof(T);
+            ConstructorInfo constractor = type.GetConstructor(new Type[0]);
+            object obj = constractor?.Invoke(new object[0]);
+            if (obj == null)
+                return null;
+            foreach(PropertyInfo property in type.GetProperties())
+            {
+
+            }
+            throw new NotImplementedException();
         }
 
         public void Insert<T>(T obj)
@@ -69,7 +106,7 @@ namespace SQL_Extention
                 InsertCommands.Add(type, Command);
             }
             PropertyInfo[] properties = type.GetProperties();
-            foreach(PropertyInfo property in properties)
+            foreach (PropertyInfo property in properties)
             {
                 if (!CheckValidProperty(property))
                     continue;
