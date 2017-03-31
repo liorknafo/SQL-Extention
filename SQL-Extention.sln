@@ -16,6 +16,8 @@ EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		TestSharedFiles\TestSharedFiles.projitems*{26a6a3ca-9fe3-442b-8953-a84eed41dc07}*SharedItemsImports = 13
+		SQL-Extention\SQL-Extention.projitems*{cc1f2a2b-598f-4c4e-bb05-3e25eeb29e98}*SharedItemsImports = 4
+		TestSharedFiles\TestSharedFiles.projitems*{cc1f2a2b-598f-4c4e-bb05-3e25eeb29e98}*SharedItemsImports = 4
 		SQL-Extention\SQL-Extention.projitems*{d5ca151a-e22d-470b-902d-6637af6e0b49}*SharedItemsImports = 13
 		SQL-Extention\SQL-Extention.projitems*{f9c9034a-b4c8-4002-97cc-1e2bc305028f}*SharedItemsImports = 4
 		TestSharedFiles\TestSharedFiles.projitems*{f9c9034a-b4c8-4002-97cc-1e2bc305028f}*SharedItemsImports = 4

@@ -14,6 +14,7 @@ namespace SQL_Extention
         private Dictionary<Type, IDbCommand> DeleteCommands = new Dictionary<Type, IDbCommand>();
         private Dictionary<Type, IDbCommand> UpdateCommands = new Dictionary<Type, IDbCommand>();
         private Dictionary<Type, Table> Tables = new Dictionary<Type, Table>();
+        private Dictionary<Table<Type, int>, IDbCommand> GetByPk = new Dictionary<Table<Type, int>, IDbCommand>();
 
         private IDbConnection Connectoin;
         private SQLCommandAdapter SQLCommandAdapter;
@@ -44,11 +45,16 @@ namespace SQL_Extention
 
         public void CreateTable<T>()
         {
-            IDbCommand createCommand = Connectoin.CreateCommand();
             Type type = typeof(T);
             Table tableInfo = new Table(type, Connectoin);
             Tables.Add(type, tableInfo);
-            SQLCommandAdapter.CreateTable(tableInfo);
+            IDbCommand createCommand = SQLCommandAdapter.CreateTable(tableInfo);
+            createCommand.ExecuteNonQuery();
+        }
+
+        public T Get<T>(params object[] pks)
+        {
+
         }
 
         public void Insert<T>(T obj)
@@ -59,7 +65,8 @@ namespace SQL_Extention
                 Command = InsertCommands[type];
             else
             {
-                Command = null;
+                Command = SQLCommandAdapter.Insert<T>();
+                InsertCommands.Add(type, Command);
             }
             PropertyInfo[] properties = type.GetProperties();
             foreach(PropertyInfo property in properties)
@@ -67,10 +74,11 @@ namespace SQL_Extention
                 if (!CheckValidProperty(property))
                     continue;
                 object value = property.GetValue(obj);
-                Command.Parameters[$"@{property.Name}"] = value;
+                (Command.Parameters[$"@{property.Name}"] as IDbDataParameter).Value = value;
             }
             Command.ExecuteNonQuery();
         }
+
         private bool CheckValidProperty(PropertyInfo propertyInfo)
         {
             foreach (object attribute in propertyInfo.GetCustomAttributes(true))
@@ -82,15 +90,16 @@ namespace SQL_Extention
             }
             return true;
         }
-        public void Update(object obj)
+        public void Update<T>(T obj)
         {
-            Type type = obj.GetType();
+            Type type = typeof(T);
             IDbCommand Command;
             if (UpdateCommands.ContainsKey(type))
                 Command = InsertCommands[type];
             else
             {
-                Command = null;
+                Command = SQLCommandAdapter.Update<T>();
+                UpdateCommands.Add(type, Command);
             }
             PropertyInfo[] properties = type.GetProperties();
             foreach (PropertyInfo property in properties)
@@ -103,16 +112,17 @@ namespace SQL_Extention
             Command.ExecuteNonQuery();
         }
 
-        public void Delete(object obj)
+        public void Delete<T>(T obj)
         {
-            Type type = obj.GetType();
+            Type type = typeof(T);
             Table table = Tables[type];
             IDbCommand Command;
             if (DeleteCommands.ContainsKey(type))
                 Command = InsertCommands[type];
             else
             {
-                Command = null;
+                Command = SQLCommandAdapter.Delete<T>();
+                DeleteCommands.Add(type, Command);
             }
             foreach (TableInfo.ColumnInfo pk in table.PrimaryKeys)
             {

@@ -18,10 +18,10 @@ namespace SQL_Extention
         }
 
         public abstract IDbCommand CreateTable(Table tableInfo);
-        public IDbCommand Insert<T>(T obj)
+        public IDbCommand Insert<T>()
         {
             Type type = typeof(T);
-            string sql = $"INSERT INFO '{type.Name}' VALUES(";
+            string sql = $"INSERT INTO '{type.Name}' VALUES(";
             IDbCommand Command = Connction.CreateCommand();
             bool isFirst = true;
             foreach (PropertyInfo property in type.GetProperties())
@@ -41,7 +41,7 @@ namespace SQL_Extention
             Command.CommandText = sql;
             return Command;
         }
-        public IDbCommand Delete<T>(T obj)
+        public IDbCommand Delete<T>()
         {
             Type type = typeof(T);
             string sql = $"DELETE FROM '{type.Name}' WHERE ";
@@ -65,9 +65,46 @@ namespace SQL_Extention
             Command.CommandText = sql;
             return Command;
         }
+        public IDbCommand Update<T>()
+        {
+            Type type = typeof(T);
+            string sql = $"UPDATE '{type.Name}' SET ";
+            IDbCommand Command = Connction.CreateCommand();
 
-        
+            bool isFirst = true;
+            foreach (PropertyInfo property in type.GetProperties())
+            {
+                if (!property.IsPrimaryKey())
+                {
+                    IDbDataParameter param = Command.CreateParameter();
+                    param.ParameterName = $"@{property.Name}";
+                    Command.Parameters.Add(param);
+                    if (!isFirst)
+                        sql += " , ";
+                    sql += $"'{property.Name}' = @{property.Name}";
+                    isFirst = false;
+                }
+            }
+            sql += "WHERE ";
+            isFirst = true;
+            foreach (PropertyInfo property in type.GetProperties())
+            {
+                if (property.IsPrimaryKey())
+                {
+                    IDbDataParameter param = Command.CreateParameter();
+                    param.ParameterName = $"@{property.Name}";
+                    Command.Parameters.Add(param);
+                    if (!isFirst)
+                        sql += " AND ";
+                    sql += $"'{property.Name}' = @{property.Name}";
+                    isFirst = false;
+                }
+            }
 
+            sql += ";";
+            Command.CommandText = sql;
+            return Command;
+        }
         private bool IsValidProperty(PropertyInfo property)
         {
             foreach (object attribute in property.GetCustomAttributes(true))
@@ -158,7 +195,7 @@ namespace SQL_Extention
 
         public override IDbCommand CreateTable(Table tableInfo)
         {
-            string sql = $"CREATE TABLE '{tableInfo.Name}'(";
+            string sql = $"CREATE TABLE IF NOT EXISTS {tableInfo.Name}(";
             Dictionary<Type, List<Tuple<string, string>>> foreignKeys = new Dictionary<Type, List<Tuple<string, string>>>();
             bool isFirst = true;
             foreach (ColumnInfo column in tableInfo.Columns)
@@ -167,27 +204,12 @@ namespace SQL_Extention
                 if (!isFirst)
                     sql += ", ";
                 isFirst = false;
-                if (type == typeof(string))
-                {
-                    int limit = 0;
-                    if (column.IsLengthLimit(ref limit))
-                    {
-                        sql += $"VARCHAR({limit} ";
-                    }
-                    else
-                    {
-                        sql += "TEXT ";
-                    }
-                }
-                else if (type == typeof(DateTime))
-                {
-                    sql += "DATE ";
-                }
-                else
-                {
-                    sql += $"{type.Name.ToUpper()} ";
-                }
-                sql += $"'{column.Name}' ";
+
+                int limit = -1;
+                column.IsLengthLimit(ref limit);
+
+                sql += $" {column.Name} ";
+                sql += typeToSqlType(type, limit);
 
                 if (column.IsNotNull)
                 {
@@ -224,7 +246,7 @@ namespace SQL_Extention
                 }
                 sql += $") REFERENCES {foreignKey.Key.Name}(";
                 isFirst = true;
-                foreach(var foreignKeyName in foreignKey.Value)
+                foreach (var foreignKeyName in foreignKey.Value)
                 {
                     if (!isFirst)
                         sql += ", ";
@@ -232,11 +254,45 @@ namespace SQL_Extention
                         isFirst = false;
                     sql += foreignKeyName.Item2;
                 }
-                sql += ");";
+                sql += ")";
             }
+            sql += ");";
             var command = Connction.CreateCommand();
             command.CommandText = sql;
             return command;
+        }
+
+        private string typeToSqlType(Type type, int maxLength = -1)
+        {
+            if (type == typeof(string))
+            {
+                if (maxLength == -1)
+                    return "TEXT";
+                else
+                {
+                    return $"VARCHAR({maxLength})";
+                }
+            }
+            else if (type == typeof(long) || type == typeof(int))
+            {
+                return "INTEGER";
+            }
+            else if (type == typeof(float) || type == typeof(double))
+            {
+                return "REAL";
+            }
+            else if (type == typeof(ulong) || type == typeof(uint))
+            {
+                return "UNSIGNED BIG INT";
+            }
+            else if(type == typeof(DateTime))
+            {
+                return "DATE";
+            }
+            else
+            {
+                return type.Name.ToUpper();
+            }
         }
     }
 

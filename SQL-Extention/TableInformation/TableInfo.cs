@@ -47,7 +47,7 @@ namespace SQL_Extention.TableInfo
                 }
                 if (toContinue)
                     continue;
-                ColumnInfo column = new ColumnInfo(property.Name, property.PropertyType, propAttributes,, isPrimaryKey);
+                ColumnInfo column = new ColumnInfo(property.Name, property.PropertyType, propAttributes,isNotNull, isPrimaryKey);
                 columns.Add(column);
                 if (isPrimaryKey)
                     primaryKeys.Add(column);

@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Data.SQLite;
+using SQL_Extention;
+using TestSharedFiles;
 
 namespace sqliteTestProject
 {
@@ -24,8 +26,11 @@ namespace sqliteTestProject
         public MainWindow()
         {
             InitializeComponent();
-            SQLiteConnection c = new SQLiteConnection();
-            SQLiteCommand command = c.CreateCommand();
+            SQLiteConnection con = new SQLiteConnection(@"Data Source=C:\Users\lior\Source\Repos\SQL-Extention\sqliteTestProject\bin\Debug\databaseSqlite.db");
+            con.Open();
+            Connection connction = new Connection(con);
+            connction.CreateTable<User>();
+            connction.Insert(new User() { Id = 10, Birthday = DateTime.Now, FirstName = "lior", LastName = "knafo", Password = "f4rdf32e" });
         }
     }
 }
