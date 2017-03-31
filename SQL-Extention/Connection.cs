@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Data;
 using System.Reflection;
-using RefPropertyAttributes = System.Reflection.PropertyAttributes;
 using Table = SQL_Extention.TableInfo.TableInfo;
 using SQL_Extention.TableInfo;
 
@@ -16,6 +14,7 @@ namespace SQL_Extention
         private Dictionary<Type, IDbCommand> UpdateCommands = new Dictionary<Type, IDbCommand>();
         private Dictionary<Type, Table> Tables = new Dictionary<Type, Table>();
         private Dictionary<Tuple<Type, int>, IDbCommand> GetByPk = new Dictionary<Tuple<Type, int>, IDbCommand>();
+        private Dictionary<System.Linq.Expressions.Expression, IDbCommand> Gets = new Dictionary<System.Linq.Expressions.Expression, IDbCommand>();
 
         private IDbConnection Connectoin;
         private SQLCommandAdapter SQLCommandAdapter;
@@ -28,19 +27,13 @@ namespace SQL_Extention
             {
                 //to sqlite 
                 if (connction.GetType().Name.ToLower().Contains("sqlite"))
-                {
                     SQLCommandAdapter = new SQLiteCommandAdapter(connction);
-                }
                 // to mysql
                 else if (connction.GetType().Name.ToLower().Contains("mysql"))
-                {
                     SQLCommandAdapter = new MYSQLCommandAdapter(connction);
-                }
                 // to sql server
                 else if (connction is System.Data.SqlClient.SqlConnection)
-                {
                     SQLCommandAdapter = new SQLServerCommandAdapter(connction);
-                }
             }
         }
 
@@ -87,7 +80,7 @@ namespace SQL_Extention
             object obj = constractor?.Invoke(new object[0]);
             if (obj == null)
                 return null;
-            foreach(PropertyInfo property in type.GetProperties())
+            foreach (PropertyInfo property in type.GetProperties())
             {
 
             }
@@ -114,6 +107,20 @@ namespace SQL_Extention
                 (Command.Parameters[$"@{property.Name}"] as IDbDataParameter).Value = value;
             }
             Command.ExecuteNonQuery();
+        }
+
+        public T Get<T>(System.Linq.Expressions.Expression<Func<T, bool>> exp)
+        {
+            IDbCommand command;
+            if (!Gets.ContainsKey(exp))
+            {
+                command = SQLCommandAdapter.Get(exp);
+                Gets.Add(exp, command);
+            }
+            else
+                command = Gets[exp];
+            command.ExecuteReader();
+            return null;
         }
 
         private bool CheckValidProperty(PropertyInfo propertyInfo)

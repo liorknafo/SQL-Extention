@@ -170,17 +170,51 @@ namespace SQL_Extention
             return Command;
         }
 
+        public IDbCommand Get<T>(Expression<Func<T, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 1);
 
-        public IDbCommand Get<T>(System.Linq.Expressions.Expression<Func<T, bool>> filter = null)
+        public IDbCommand Get<T, T2>(Expression<Func<T, T2, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 2);
+
+        public IDbCommand Get<T, T2, T3>(Expression<Func<T, T2, T3, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 3);
+
+        public IDbCommand Get<T, T2, T3, T4>(Expression<Func<T, T2, T3, T4, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 4);
+
+        public IDbCommand Get<T, T2, T3, T4, T5>(Expression<Func<T, T2, T3, T4, T5, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 5);
+
+        public IDbCommand Get<T, T2, T3, T4, T5, T6>(Expression<Func<T, T2, T3, T4, T5, T6, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 6);
+
+        public IDbCommand Get<T, T2, T3, T4, T5, T6, T7>(Expression<Func<T, T2, T3, T4, T5, T6, T7, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 7);
+
+        public IDbCommand Get<T, T2, T3, T4, T5, T6, T7, T8>(Expression<Func<T, T2, T3, T4, T5, T6, T7,T8, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 8);
+
+        public IDbCommand Get<T, T2, T3, T4, T5, T6, T7, T8,T9>(Expression<Func<T, T2, T3, T4, T5, T6, T7, T8,T9, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 9);
+
+        public IDbCommand Get<T, T2, T3, T4, T5, T6, T7, T8, T9,T10>(Expression<Func<T, T2, T3, T4, T5, T6, T7, T8, T9,T10, bool>> linq) =>
+            CreateGetCommand<T>(LinqComplation.ExpretionToString(linq), 10);
+
+        private IDbCommand CreateGetCommand<T>(string filter, int TCount)
         {
-            ExpretionToString(filter);
-            return null;
+            var command = Connction.CreateCommand();
+            command.CommandText = $"SELECT * FROM {typeof(T)} WHERE {filter}";
+            for (int i = 1; i <= TCount; i++)
+            {
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = $"@{i}";
+                command.Parameters.Add(parameter);
+            }
+            return command;
         }
 
-        public List<string> ExpretionToString<T>(Expression<Func<T, bool>> filter)
+        public IDbCommand Get<T>()
         {
-            var conditions = new List<string>();
-
             return null;
         }
     }
