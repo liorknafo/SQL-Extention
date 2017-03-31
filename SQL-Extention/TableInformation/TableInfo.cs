@@ -12,7 +12,7 @@ namespace SQL_Extention.TableInfo
         public string Name { get { return Type.Name; } }
         public IEnumerable<ColumnInfo> Columns { get; }
         public IDbCommand FindByPK { get; }
-        public IEnumerable<ColumnInfo> PrimaryKeys { get; }
+        public IReadOnlyList<ColumnInfo> PrimaryKeys { get; }
 
         public TableInfo(Type type, IDbConnection connction)
         {
