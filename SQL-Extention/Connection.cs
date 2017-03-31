@@ -50,7 +50,9 @@ namespace SQL_Extention
             Table tableInfo = new Table(type, Connectoin);
             Tables.Add(type, tableInfo);
             IDbCommand createCommand = SQLCommandAdapter.CreateTable(tableInfo);
+            IDbTransaction trans = Connectoin.BeginTransaction();
             createCommand.ExecuteNonQuery();
+            trans.Commit();
         }
 
         public T Get<T>(params object[] pks) where T : class
@@ -68,7 +70,7 @@ namespace SQL_Extention
             }
             else
             {
-                Command = SQLCommandAdapter.Get<T>(pkNum);
+                Command = SQLCommandAdapter.Get<T>(pkNum,table);
                 GetByPk.Add(tuple, Command);
             }
             int i = 0;
@@ -79,7 +81,9 @@ namespace SQL_Extention
             }
             using (IDataReader dataReader = Command.ExecuteReader())
             {
-                return GetObject<T>(dataReader);
+                if(dataReader.Read())
+                    return GetObject<T>(dataReader);
+                return null;
             }
         }
 
@@ -92,7 +96,7 @@ namespace SQL_Extention
                 return null;
             foreach(PropertyInfo property in type.GetProperties())
             {
-                if(!CheckValidProperty(property))
+                if(CheckValidProperty(property))
                 {
                     property.SetValue(obj, dataReader[property.Name]);
                 }
@@ -119,7 +123,9 @@ namespace SQL_Extention
                 object value = property.GetValue(obj);
                 (Command.Parameters[$"@{property.Name}"] as IDbDataParameter).Value = value;
             }
+            IDbTransaction trans = Connectoin.BeginTransaction();
             Command.ExecuteNonQuery();
+            trans.Commit();
         }
 
         private bool CheckValidProperty(PropertyInfo propertyInfo)
