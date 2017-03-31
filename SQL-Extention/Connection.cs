@@ -14,7 +14,7 @@ namespace SQL_Extention
         private Dictionary<Type, IDbCommand> DeleteCommands = new Dictionary<Type, IDbCommand>();
         private Dictionary<Type, IDbCommand> UpdateCommands = new Dictionary<Type, IDbCommand>();
         private Dictionary<Type, Table> Tables = new Dictionary<Type, Table>();
-        private Dictionary<Table<Type, int>, IDbCommand> GetByPk = new Dictionary<Table<Type, int>, IDbCommand>();
+        private Dictionary<Tuble<Type, int>, IDbCommand> GetByPk = new Dictionary<Tuple Tuble<Type, int>, IDbCommand>();
 
         private IDbConnection Connectoin;
         private SQLCommandAdapter SQLCommandAdapter;

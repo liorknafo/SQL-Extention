@@ -7,8 +7,72 @@ using SQL_Extention.Attributes.Constraint;
 using SQL_Extention.Attributes;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq.Expressions;
+
 namespace SQL_Extention
 {
+    internal static class Extentions
+    {
+        public static bool IsUnique(this ColumnInfo column)
+        {
+            foreach (SqlAttribute attribute in column.Attributes)
+            {
+                if (attribute is Unique)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool IsLengthLimit(this ColumnInfo column, ref int limit)
+        {
+            foreach (SqlAttribute attribute in column.Attributes)
+            {
+                if (attribute is MaxLength)
+                {
+                    limit = (attribute as MaxLength).Length;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static bool isForeignKey(this ColumnInfo column, out ForeignKey foreignKey)
+        {
+            foreach (SqlAttribute attribute in column.Attributes)
+            {
+                if (attribute is ForeignKey)
+                {
+                    foreignKey = attribute as ForeignKey;
+                    return true;
+                }
+            }
+            foreignKey = null;
+            return false;
+        }
+
+        public static bool IsPrimaryKey(this PropertyInfo propery)
+        {
+            foreach (object attribute in propery.GetCustomAttributes(true))
+            {
+                if (attribute is PrimaryKey)
+                    return true;
+            }
+            return false;
+        }
+
+        public static bool IsValidProperty(this PropertyInfo property)
+        {
+            foreach (object attribute in property.GetCustomAttributes(true))
+            {
+                if (attribute is Ignore)
+                    return false;
+            }
+            return true;
+        }
+    }
+
     public abstract class SQLCommandAdapter
     {
         protected IDbConnection Connction;
@@ -26,7 +90,7 @@ namespace SQL_Extention
             bool isFirst = true;
             foreach (PropertyInfo property in type.GetProperties())
             {
-                if (IsValidProperty(property))
+                if (property.IsValidProperty())
                 {
                     IDbDataParameter param = Command.CreateParameter();
                     param.ParameterName = $"@{property.Name}";
@@ -105,84 +169,19 @@ namespace SQL_Extention
             Command.CommandText = sql;
             return Command;
         }
-        private bool IsValidProperty(PropertyInfo property)
-        {
-            foreach (object attribute in property.GetCustomAttributes(true))
-            {
-                if (attribute is Ignore)
-                    return false;
-            }
-            return true;
-        }
+
 
         public IDbCommand Get<T>(System.Linq.Expressions.Expression<Func<T, bool>> filter = null)
         {
-            //if(filter == null)
-            //{
-            //    return $"SELECT * FROM '{typeof(T).Name}';";
-            //}
-            //string sql = $"SELECT * FROM '{typeof(T).Name}' WHERE ";
-            //System.Linq.Expressions.Expression filterWork = filter;
-            //if (filter.CanReduce)
-            //    filterWork = filterWork.ReduceExtensions();
+            ExpretionToString(filter);
             return null;
         }
 
-        public string ExpretionToString<T>(System.Linq.Expressions.Expression<Func<T, bool>> filter)
+        public List<string> ExpretionToString<T>(Expression<Func<T, bool>> filter)
         {
+            var conditions = new List<string>();
+
             return null;
-        }
-    }
-
-    internal static class Extentions
-    {
-        public static bool IsUnique(this ColumnInfo column)
-        {
-            foreach (SqlAttribute attribute in column.Attributes)
-            {
-                if (attribute is Unique)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static bool IsLengthLimit(this ColumnInfo column, ref int limit)
-        {
-            foreach (SqlAttribute attribute in column.Attributes)
-            {
-                if (attribute is MaxLength)
-                {
-                    limit = (attribute as MaxLength).Length;
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public static bool isForeignKey(this ColumnInfo column, out ForeignKey foreignKey)
-        {
-            foreach (SqlAttribute attribute in column.Attributes)
-            {
-                if (attribute is ForeignKey)
-                {
-                    foreignKey = attribute as ForeignKey;
-                    return true;
-                }
-            }
-            foreignKey = null;
-            return false;
-        }
-
-        public static bool IsPrimaryKey(this PropertyInfo propery)
-        {
-            foreach (object attribute in propery.GetCustomAttributes(true))
-            {
-                if (attribute is PrimaryKey)
-                    return true;
-            }
-            return false;
         }
     }
 
@@ -285,7 +284,7 @@ namespace SQL_Extention
             {
                 return "UNSIGNED BIG INT";
             }
-            else if(type == typeof(DateTime))
+            else if (type == typeof(DateTime))
             {
                 return "DATE";
             }
