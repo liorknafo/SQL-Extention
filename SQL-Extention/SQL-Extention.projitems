@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>d5ca151a-e22d-470b-902d-6637af6e0b49</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>SQL_Extention</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\Constraints\AttributeConstraint.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\Ignore.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\Keys\AttributeKey.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\SqlAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TableInformation\ColumnInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Connection.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\Keys\ForeignKey.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\Constraints\MaxLength.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\Constraints\NotNull.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\Keys\PrimaryKey.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SQLCommandAdapter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TableInformation\TableInfo.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Attributes\Constraints\Unique.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Attributes\Keys\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Attributes\Constraints\" />
+    <Folder Include="$(MSBuildThisFileDirectory)TableInformation\" />
+  </ItemGroup>
+</Project>
