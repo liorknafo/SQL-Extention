@@ -203,7 +203,7 @@ namespace SQL_Extention
         private IDbCommand CreateGetCommand<T>(string filter, int TCount)
         {
             var command = Connction.CreateCommand();
-            command.CommandText = $"SELECT * FROM {typeof(T)} WHERE {filter}";
+            command.CommandText = $"SELECT * FROM {typeof(T).Name} WHERE {filter}";
             for (int i = 1; i <= TCount; i++)
             {
                 var parameter = command.CreateParameter();
@@ -213,9 +213,6 @@ namespace SQL_Extention
             return command;
         }
 
-<<<<<<< HEAD
-        public IDbCommand Get<T>()
-=======
         public IDbCommand Get<T>(int pkNum, Table table)
         {
             string sql = $"SELECT * FROM '{table.Name}' WHERE ";
@@ -231,12 +228,6 @@ namespace SQL_Extention
             }
             command.CommandText = sql + " ;";
             return command;
-        }
-
-        public List<string> ExpretionToString<T>(Expression<Func<T, bool>> filter)
->>>>>>> f963a0385c9a2f06d62a7dc03b3053f157c019cf
-        {
-            return null;
         }
     }
 

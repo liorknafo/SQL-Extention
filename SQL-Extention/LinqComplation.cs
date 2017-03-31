@@ -40,6 +40,7 @@ namespace SQL_Extention
                 var right = CompileExpr<T>(bin.Right, names);
                 return $"({left} {GetSqlName(bin)} {right})";
             }
+
             else if (expr is MethodCallExpression met)
             {
                 if (met.Method.DeclaringType == typeof(string))
@@ -55,6 +56,12 @@ namespace SQL_Extention
                     else if (met.Method.Name.Equals("ToUpper"))
                         return $"(upper({CompileExpr<T>(met.Object, names)}))";
                 }
+            }
+            else if(expr is UnaryExpression u)
+            {
+                //var ty = u.Type;
+                //var valr = CompileExpr<T>(u.Operand, names);
+                return CompileExpr<T>(u.Operand, names);
             }
             else if (expr is ConstantExpression constant)
             {

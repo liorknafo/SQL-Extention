@@ -4,9 +4,49 @@ using System.Data;
 using System.Reflection;
 using Table = SQL_Extention.TableInfo.TableInfo;
 using SQL_Extention.TableInfo;
+using System.Linq.Expressions;
 
 namespace SQL_Extention
 {
+    internal static class Ex
+    {
+        public static T GetObject<T>(this IDataReader dataReader) where T : class, new()
+        {
+            Type type = typeof(T);
+            object obj = new T();
+            if (obj == null)
+                return null;
+            foreach (PropertyInfo property in type.GetProperties())
+            {
+                if (property.CheckValidProperty())
+                {
+                    property.SetValue(obj, dataReader[property.Name]);
+                }
+            }
+            return (T)obj;
+        }
+
+        public static List<T> GetObjects<T>(this IDataReader dataReader) where T : class, new()
+        {
+            var o = new List<T>();
+            while (dataReader.Read())
+                o.Add(dataReader.GetObject<T>());
+            return o;
+        }
+
+        public static bool CheckValidProperty(this PropertyInfo propertyInfo)
+        {
+            foreach (object attribute in propertyInfo.GetCustomAttributes(true))
+            {
+                if (attribute is Attributes.Ignore)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
     public class Connection
     {
         private Dictionary<Type, IDbCommand> InsertCommands = new Dictionary<Type, IDbCommand>();
@@ -14,7 +54,7 @@ namespace SQL_Extention
         private Dictionary<Type, IDbCommand> UpdateCommands = new Dictionary<Type, IDbCommand>();
         private Dictionary<Type, Table> Tables = new Dictionary<Type, Table>();
         private Dictionary<Tuple<Type, int>, IDbCommand> GetByPk = new Dictionary<Tuple<Type, int>, IDbCommand>();
-        private Dictionary<System.Linq.Expressions.Expression, IDbCommand> Gets = new Dictionary<System.Linq.Expressions.Expression, IDbCommand>();
+        private Dictionary<Expression, IDbCommand> Gets = new Dictionary<Expression, IDbCommand>();
 
         private IDbConnection Connectoin;
         private SQLCommandAdapter SQLCommandAdapter;
@@ -48,7 +88,7 @@ namespace SQL_Extention
             trans.Commit();
         }
 
-        public T Get<T>(params object[] pks) where T : class
+        public T Get<T>(params object[] pks) where T : class, new()
         {
             int pkNum = pks.Length;
             Type type = typeof(T);
@@ -63,7 +103,7 @@ namespace SQL_Extention
             }
             else
             {
-                Command = SQLCommandAdapter.Get<T>(pkNum,table);
+                Command = SQLCommandAdapter.Get<T>(pkNum, table);
                 GetByPk.Add(tuple, Command);
             }
             int i = 0;
@@ -74,27 +114,10 @@ namespace SQL_Extention
             }
             using (IDataReader dataReader = Command.ExecuteReader())
             {
-                if(dataReader.Read())
-                    return GetObject<T>(dataReader);
+                if (dataReader.Read())
+                    return dataReader.GetObject<T>();
                 return null;
             }
-        }
-
-        private T GetObject<T>(IDataReader dataReader) where T : class
-        {
-            Type type = typeof(T);
-            ConstructorInfo constractor = type.GetConstructor(new Type[0]);
-            object obj = constractor?.Invoke(new object[0]);
-            if (obj == null)
-                return null;
-            foreach (PropertyInfo property in type.GetProperties())
-            {
-                if(CheckValidProperty(property))
-                {
-                    property.SetValue(obj, dataReader[property.Name]);
-                }
-            }
-            return (T)obj;
         }
 
         public void Insert<T>(T obj)
@@ -111,7 +134,7 @@ namespace SQL_Extention
             PropertyInfo[] properties = type.GetProperties();
             foreach (PropertyInfo property in properties)
             {
-                if (!CheckValidProperty(property))
+                if (!property.CheckValidProperty())
                     continue;
                 object value = property.GetValue(obj);
                 (Command.Parameters[$"@{property.Name}"] as IDbDataParameter).Value = value;
@@ -121,31 +144,125 @@ namespace SQL_Extention
             trans.Commit();
         }
 
-        public T Get<T>(System.Linq.Expressions.Expression<Func<T, bool>> exp)
+        public List<T> Get<T>(Expression<Func<T, bool>> exp) where T : class, new()
+        {
+            using (var reader = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp)).ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2>(Expression<Func<T, T2, bool>> exp,T2 t2) where T : class, new()
+        {
+            var cmd=ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2, T3>(Expression<Func<T, T2, T3, bool>> exp,T2 t2,T3 t3) where T : class, new()
+        {
+            var cmd = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            (cmd.Parameters["@2"] as IDbDataParameter).Value = t3;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2, T3, T4>(Expression<Func<T, T2, T3, T4, bool>> exp,T2 t2,T3 t3,T4 t4) where T : class, new()
+        {
+            var cmd = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            (cmd.Parameters["@2"] as IDbDataParameter).Value = t3;
+            (cmd.Parameters["@3"] as IDbDataParameter).Value = t4;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2, T3, T4, T5>(Expression<Func<T, T2, T3, T4, T5, bool>> exp, T2 t2, T3 t3, T4 t4,T5 t5) where T : class, new()
+        {
+            var cmd = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            (cmd.Parameters["@2"] as IDbDataParameter).Value = t3;
+            (cmd.Parameters["@3"] as IDbDataParameter).Value = t4;
+            (cmd.Parameters["@4"] as IDbDataParameter).Value = t5;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2, T3, T4, T5, T6>(Expression<Func<T, T2, T3, T4, T5, T6, bool>> exp, T2 t2, T3 t3, T4 t4, T5 t5,T6 t6) where T : class, new()
+        {
+            var cmd = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            (cmd.Parameters["@2"] as IDbDataParameter).Value = t3;
+            (cmd.Parameters["@3"] as IDbDataParameter).Value = t4;
+            (cmd.Parameters["@4"] as IDbDataParameter).Value = t5;
+            (cmd.Parameters["@5"] as IDbDataParameter).Value = t6;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2, T3, T4, T5, T6, T7>(Expression<Func<T, T2, T3, T4, T5, T6, T7, bool>> exp, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6,T7 t7) where T : class, new()
+        {
+            var cmd = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            (cmd.Parameters["@2"] as IDbDataParameter).Value = t3;
+            (cmd.Parameters["@3"] as IDbDataParameter).Value = t4;
+            (cmd.Parameters["@4"] as IDbDataParameter).Value = t5;
+            (cmd.Parameters["@5"] as IDbDataParameter).Value = t6;
+            (cmd.Parameters["@6"] as IDbDataParameter).Value = t7;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2, T3, T4, T5, T6, T7, T8>(Expression<Func<T, T2, T3, T4, T5, T6, T7, T8, bool>> exp, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7,T8 t8) where T : class, new()
+        {
+            var cmd = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            (cmd.Parameters["@2"] as IDbDataParameter).Value = t3;
+            (cmd.Parameters["@3"] as IDbDataParameter).Value = t4;
+            (cmd.Parameters["@4"] as IDbDataParameter).Value = t5;
+            (cmd.Parameters["@5"] as IDbDataParameter).Value = t6;
+            (cmd.Parameters["@6"] as IDbDataParameter).Value = t7;
+            (cmd.Parameters["@7"] as IDbDataParameter).Value = t8;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2, T3, T4, T5, T6, T7, T8, T9>(Expression<Func<T, T2, T3, T4, T5, T6, T7, T8, T9, bool>> exp, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8,T9 t9) where T : class, new()
+        {
+            var cmd = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            (cmd.Parameters["@2"] as IDbDataParameter).Value = t3;
+            (cmd.Parameters["@3"] as IDbDataParameter).Value = t4;
+            (cmd.Parameters["@4"] as IDbDataParameter).Value = t5;
+            (cmd.Parameters["@5"] as IDbDataParameter).Value = t6;
+            (cmd.Parameters["@6"] as IDbDataParameter).Value = t7;
+            (cmd.Parameters["@7"] as IDbDataParameter).Value = t8;
+            (cmd.Parameters["@8"] as IDbDataParameter).Value = t9;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+        public List<T> Get<T, T2, T3, T4, T5, T6, T7, T8, T9,T10>(Expression<Func<T, T2, T3, T4, T5, T6, T7, T8, T9,T10, bool>> exp, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9,T10 t10) where T : class, new()
+        {
+            var cmd = ExecuteGet<T>(exp, () => SQLCommandAdapter.Get(exp));
+            (cmd.Parameters["@1"] as IDbDataParameter).Value = t2;
+            (cmd.Parameters["@2"] as IDbDataParameter).Value = t3;
+            (cmd.Parameters["@3"] as IDbDataParameter).Value = t4;
+            (cmd.Parameters["@4"] as IDbDataParameter).Value = t5;
+            (cmd.Parameters["@5"] as IDbDataParameter).Value = t6;
+            (cmd.Parameters["@6"] as IDbDataParameter).Value = t7;
+            (cmd.Parameters["@7"] as IDbDataParameter).Value = t8;
+            (cmd.Parameters["@8"] as IDbDataParameter).Value = t9;
+            (cmd.Parameters["@9"] as IDbDataParameter).Value = t10;
+            using (var reader = cmd.ExecuteReader())
+                return reader.GetObjects<T>();
+        }
+
+
+        private IDbCommand ExecuteGet<T>(Expression exp, Func<IDbCommand> createIDbCommandOfGet) where T : class, new()
         {
             IDbCommand command;
             if (!Gets.ContainsKey(exp))
             {
-                command = SQLCommandAdapter.Get(exp);
+                command = createIDbCommandOfGet();
                 Gets.Add(exp, command);
             }
             else
                 command = Gets[exp];
-            command.ExecuteReader();
-            return null;
+            return command;
         }
 
-        private bool CheckValidProperty(PropertyInfo propertyInfo)
-        {
-            foreach (object attribute in propertyInfo.GetCustomAttributes(true))
-            {
-                if (attribute is Attributes.Ignore)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
         public void Update<T>(T obj)
         {
             Type type = typeof(T);
@@ -160,7 +277,7 @@ namespace SQL_Extention
             PropertyInfo[] properties = type.GetProperties();
             foreach (PropertyInfo property in properties)
             {
-                if (!CheckValidProperty(property))
+                if (!property.CheckValidProperty())
                     continue;
                 object value = property.GetValue(obj);
                 Command.Parameters[$"@{property.Name}"] = value;
