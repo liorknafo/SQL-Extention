@@ -58,7 +58,7 @@ namespace SQL_Extention
             int pkNum = pks.Length;
             Type type = typeof(T);
             Table table = Tables[type];
-            if (table.PrimaryKeys.Count <= pkNum)
+            if (table.PrimaryKeys.Count < pkNum)
                 throw new IndexOutOfRangeException($"PK NUM CAN'T BE OVER {table.PrimaryKeys.Count}");
             Tuple<Type, int> tuple = new Tuple<Type, int>(type, pkNum);
             IDbCommand Command;
@@ -68,7 +68,7 @@ namespace SQL_Extention
             }
             else
             {
-                Command = SQLCommandAdapter.Get<T>();
+                Command = SQLCommandAdapter.Get<T>(pkNum);
                 GetByPk.Add(tuple, Command);
             }
             int i = 0;

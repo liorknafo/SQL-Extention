@@ -177,6 +177,23 @@ namespace SQL_Extention
             return null;
         }
 
+        public IDbCommand Get<T>(int pkNum, Table table)
+        {
+            string sql = $"SELECT * FROM {table.Name} WHERE ";
+            IDbCommand command = Connction.CreateCommand();
+            for (int i = 0; i < pkNum; i++)
+            {
+                if (i != 0)
+                    sql += " AND ";
+                sql += $"'{table.PrimaryKeys[i].Name}' = @{table.PrimaryKeys[i].Name}";
+                IDbDataParameter param = command.CreateParameter();
+                param.ParameterName = $"@{table.PrimaryKeys[i].Name}";
+                command.Parameters.Add(param);
+            }
+            command.CommandText = sql;
+            return command;
+        }
+
         public List<string> ExpretionToString<T>(Expression<Func<T, bool>> filter)
         {
             var conditions = new List<string>();

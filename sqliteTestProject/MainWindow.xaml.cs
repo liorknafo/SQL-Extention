@@ -30,7 +30,8 @@ namespace sqliteTestProject
             con.Open();
             Connection connction = new Connection(con);
             connction.CreateTable<User>();
-            connction.Insert(new User() { Id = 10, Birthday = DateTime.Now, FirstName = "lior", LastName = "knafo", Password = "f4rdf32e" });
+            User user = connction.Get<User>(10);
+
         }
     }
 }
