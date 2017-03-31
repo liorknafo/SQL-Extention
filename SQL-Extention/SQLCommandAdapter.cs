@@ -213,7 +213,28 @@ namespace SQL_Extention
             return command;
         }
 
+<<<<<<< HEAD
         public IDbCommand Get<T>()
+=======
+        public IDbCommand Get<T>(int pkNum, Table table)
+        {
+            string sql = $"SELECT * FROM '{table.Name}' WHERE ";
+            IDbCommand command = Connction.CreateCommand();
+            for (int i = 0; i < pkNum; i++)
+            {
+                if (i != 0)
+                    sql += " AND ";
+                sql += $"{table.PrimaryKeys[i].Name} is @{table.PrimaryKeys[i].Name}";
+                IDbDataParameter param = command.CreateParameter();
+                param.ParameterName = $"@{table.PrimaryKeys[i].Name}";
+                command.Parameters.Add(param);
+            }
+            command.CommandText = sql + " ;";
+            return command;
+        }
+
+        public List<string> ExpretionToString<T>(Expression<Func<T, bool>> filter)
+>>>>>>> f963a0385c9a2f06d62a7dc03b3053f157c019cf
         {
             return null;
         }

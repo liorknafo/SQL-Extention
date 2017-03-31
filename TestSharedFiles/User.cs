@@ -9,7 +9,7 @@ namespace TestSharedFiles
     public class User
     {
         [PrimaryKey]
-        public int Id { get; set; }
+        public long Id { get; set; }
         [MaxLength(20)]
         public string FirstName { get; set; }
         [MaxLength(20)]
@@ -22,7 +22,7 @@ namespace TestSharedFiles
         {
             get
             {
-                return (int)((DateTime.Now - Birthday).TotalDays / 365);
+                return (int)((DateTime.Now - Birthday).TotalDays / 365.25);
             }
         }
     }
